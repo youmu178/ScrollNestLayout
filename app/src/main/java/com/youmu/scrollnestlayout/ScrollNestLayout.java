@@ -20,6 +20,8 @@ public class ScrollNestLayout extends ScrollView {
     private View mViewPager;
     private float mDownY;
     private float mDownX;
+    private ViewGroup mLayout;
+    private float xDistance, yDistance, lastX, lastY;
 
     public ScrollNestLayout(Context context) {
         this(context, null);
@@ -39,13 +41,13 @@ public class ScrollNestLayout extends ScrollView {
 //                }
 //            });
 //        }
-
-        postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                scrollTo(0, 0);
-            }
-        }, 2000);
+//
+//        postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                scrollTo(0, 0);
+//            }
+//        }, 2000);
     }
 
     @Override
@@ -57,13 +59,14 @@ public class ScrollNestLayout extends ScrollView {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        mViewPager = ((ViewGroup) getChildAt(0)).getChildAt(2);
+        mLayout = (ViewGroup) getChildAt(0);
+        mViewPager = mLayout.getChildAt(2);
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int measuredHeight = getMeasuredHeight();
-        mViewPager.getLayoutParams().height = measuredHeight;
+        mViewPager.getLayoutParams().height = measuredHeight - mLayout.getChildAt(1).getHeight();
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         Log.e("", "measuredHeight " + measuredHeight);
     }
@@ -84,12 +87,28 @@ public class ScrollNestLayout extends ScrollView {
                 mDownY = ev.getY();
                 mDownX = ev.getX();
                 flag = false;
+
+                xDistance = yDistance = 0f;
+                lastX = ev.getX();
+                lastY = ev.getY();
+
                 break;
             case MotionEvent.ACTION_MOVE:
                 Log.e("abc", "onInterceptTouchEvent: " + (ev.getY() - mDownY));
                 if (ev.getY() > mDownY) {
                     flag = true;
                 }
+
+                final float curX = ev.getX();
+                final float curY = ev.getY();
+                xDistance += Math.abs(curX - lastX);
+                yDistance += Math.abs(curY - lastY) / 3; // favor X events
+                lastX = curX;
+                lastY = curY;
+                if (xDistance > yDistance) {
+                    return false;
+                }
+
                 break;
         }
 
@@ -99,9 +118,10 @@ public class ScrollNestLayout extends ScrollView {
 //            sInternalScrollY = false;
             return false;
         } else {
+
 //            return true;
-            return super.onInterceptTouchEvent(ev);
         }
+        return super.onInterceptTouchEvent(ev);
 
     }
 
